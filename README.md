@@ -51,6 +51,12 @@ Open the deployed URL and sign in with the Firebase account the agent uses (see
 If more than one machine runs an agent (`FIREBASE_AGENT_ID` set on that machine), open
 the dashboard once with `?agent=<that id>`. The choice is remembered in that browser.
 
+The **Live browser** panel on Run Overview shows what the test browser is showing during a
+run, a few frames a second. Frames are only uploaded while a dashboard has that tab open,
+since each one (roughly 20–80 KB) counts toward Firebase download usage. In Windowed mode,
+don't minimize the Chrome window on the test machine — Chrome stops painting minimized
+windows, so the panel would freeze. Headless runs always stream.
+
 Screenshots from test runs are not synced through Firebase, so they don't appear here.
 Pass/fail status, error messages, and durations do.
 

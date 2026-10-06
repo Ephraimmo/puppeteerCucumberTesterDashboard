@@ -1925,6 +1925,7 @@ function switchView(view) {
     if (view === 'studio' && !studioFeature && state.features.length) loadStudioFeature(state.features[0].uri);
     if (view === 'stepdefs') loadStepDefs();
     if (view === 'studio' || view === 'stepdefs') requestAnimationFrame(syncStickyOffsets);
+    syncLiveWatch();
 }
 
 /* ---------------- data loading ---------------- */
@@ -2693,6 +2694,43 @@ $('record-steps-list').addEventListener('click', function (event) {
     requestStepForRecording(Number(btn.dataset.index), btn);
 });
 
+/* ---------------- live browser view ---------------- */
+var liveAllowed = false;   // set once signed in — watching needs auth
+var stopLiveWatch = null;
+
+function renderLiveFrame(frame) {
+    var hasFrame = !!(frame && frame.data);
+    var img = $('live-frame');
+    if (hasFrame) img.src = 'data:image/jpeg;base64,' + frame.data;
+    img.classList.toggle('hidden', !hasFrame);
+    $('live-placeholder').classList.toggle('hidden', hasFrame);
+    $('live-viewport').classList.toggle('empty', !hasFrame);
+    $('live-status').className = 'status-pill ' + (hasFrame ? 'running' : 'idle');
+    $('live-status-text').textContent = hasFrame ? 'LIVE' : 'NO RUN';
+    $('live-url').textContent = hasFrame ? (frame.url || '') : '';
+}
+
+// Only watch while the overview is actually on screen: frames are heavy, and the agent
+// stops uploading them altogether when no dashboard is watching.
+function syncLiveWatch() {
+    var wanted = liveAllowed && !document.hidden && !$('view-overview').classList.contains('hidden');
+    if (wanted && !stopLiveWatch) {
+        stopLiveWatch = FB.watchLive(renderLiveFrame);
+    }
+    else if (!wanted && stopLiveWatch) {
+        stopLiveWatch();
+        stopLiveWatch = null;
+        renderLiveFrame(null);
+    }
+}
+
+document.addEventListener('visibilitychange', syncLiveWatch);
+
+$('live-fullscreen').addEventListener('click', function () {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if ($('live-viewport').requestFullscreen) $('live-viewport').requestFullscreen();
+});
+
 /* ---------------- boot ---------------- */
 syncStickyOffsets();
 // Everything else reads/writes through Firebase (see firebase-client.js) — wait for a
@@ -2701,4 +2739,6 @@ FB.ready.then(function () {
     load();
     loadStepSuggestions();
     setInterval(load, POLL_MS);
+    liveAllowed = true;
+    syncLiveWatch();
 });

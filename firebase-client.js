@@ -7,7 +7,7 @@
    a different computer. A local process (firebase-agent.js) on the machine with the
    actual project/Chrome/files does the real work and relays results back here.
 
-   Exposes window.FB = { AGENT_ID, ready, fetch(url, options) } — dashboard.js calls
+   Exposes window.FB = { AGENT_ID, ready, fetch(url, options), watchLive(onFrame) } — dashboard.js calls
    FB.fetch(...) exactly where it used to call the browser's own fetch(...); see the
    switch in fbFetch() below for how each endpoint maps to Firebase, and
    firebase-agent.js for the matching server-side half of each one.
@@ -165,6 +165,24 @@
         return Promise.resolve(errResponse(404, 'Unknown endpoint: ' + parsed.path));
     }
 
+    // Live view of the test browser. While watching, this page registers itself under
+    // live/viewers (removed again on stop, or by Firebase if the tab closes or drops off),
+    // which is what makes the agent upload frames at all. onFrame gets
+    // { data, url, at } for each new frame, or null when no run is showing.
+    function watchLive(onFrame) {
+        var liveRef = db.ref('agents/' + AGENT_ID + '/live');
+        var viewerRef = liveRef.child('viewers').push();
+        viewerRef.onDisconnect().remove();
+        viewerRef.set({ since: firebase.database.ServerValue.TIMESTAMP });
+        function onValue(snapshot) { onFrame(snapshot.val()); }
+        liveRef.child('frame').on('value', onValue);
+        return function stopWatching() {
+            liveRef.child('frame').off('value', onValue);
+            viewerRef.onDisconnect().cancel();
+            viewerRef.remove();
+        };
+    }
+
     /* ---------------- sign-in gate ---------------- */
     var readyResolve;
     var readyPromise = new Promise(function (resolve) { readyResolve = resolve; });
@@ -208,5 +226,5 @@
     // wrapper needed, consistent with how dashboard.js itself boots.
     wireAuthForm();
 
-    window.FB = { AGENT_ID: AGENT_ID, ready: readyPromise, fetch: fbFetch };
+    window.FB = { AGENT_ID: AGENT_ID, ready: readyPromise, fetch: fbFetch, watchLive: watchLive };
 })();
