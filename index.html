@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>TestOps Console · Puppeteer + Cucumber</title>
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+<!-- ===================== SVG ICON SPRITE ===================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><polyline points="3 12 6.5 12 9 5.5 14.5 18.5 17 12 21 12"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7.2" height="7.2" rx="1.8"/><rect x="13.8" y="3" width="7.2" height="7.2" rx="1.8"/><rect x="3" y="13.8" width="7.2" height="7.2" rx="1.8"/><rect x="13.8" y="13.8" width="7.2" height="7.2" rx="1.8"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20v-8"/><path d="M10 20V5"/><path d="M16 20v-5"/><path d="M21 20H3"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5Z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3.5V8h-4.5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.086a1.5 1.5 0 0 1 1.06.44L11 6.79a1.5 1.5 0 0 0 1.06.44H19.5A1.5 1.5 0 0 1 21 8.73V17.5A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5Z"/></symbol>
+    <symbol id="i-folder-plus" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.086a1.5 1.5 0 0 1 1.06.44L11 6.79a1.5 1.5 0 0 0 1.06.44H19.5A1.5 1.5 0 0 1 21 8.73V17.5A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5Z"/><path d="M12 10.5v6M9 13.5h6"/></symbol>
+    <symbol id="i-file-plus" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 11v6M9 14h6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 9h18"/><path d="M9 4.5v15M15 4.5v15"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2.4"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5-9.5 9.5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4.5A1.5 1.5 0 0 1 9.5 3h5A1.5 1.5 0 0 1 16 4.5V6"/><path d="M19 6v13.5A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5V6"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m9 8-4.5 4L9 16"/><path d="m15 8 4.5 4L15 16"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
+  </defs>
+</svg>
+
+<!-- ===================== SIGN IN ===================== -->
+<div class="auth-overlay" id="auth-overlay">
+  <form class="auth-card" id="auth-form">
+    <span class="auth-lock"><svg class="icon"><use href="#i-lock"/></svg></span>
+    <h2>Sign in to TestOps</h2>
+    <p class="auth-sub">This console controls the Puppeteer/Cucumber agent on your machine — sign in to continue.</p>
+    <label>Email<input type="email" id="auth-email" autocomplete="username" required></label>
+    <label>Password<input type="password" id="auth-password" autocomplete="current-password" required></label>
+    <p class="auth-error hidden" id="auth-error"></p>
+    <button class="btn btn-primary auth-submit" id="auth-submit" type="submit"><svg class="icon"><use href="#i-lock"/></svg> Sign in</button>
+  </form>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="site-header">
+  <div class="header-top">
+    <div class="brand">
+      <span class="brand-mark"><svg class="icon"><use href="#i-pulse"/></svg></span>
+      <span class="brand-text">
+        <strong>TestOps</strong>
+        <small>Puppeteer · Cucumber</small>
+      </span>
+    </div>
+
+    <nav class="tabs" aria-label="Sections">
+      <button class="tab active" data-view="overview">
+        <svg class="icon"><use href="#i-grid"/></svg><span>Run Overview</span>
+      </button>
+      <button class="tab" data-view="reports">
+        <svg class="icon"><use href="#i-chart"/></svg><span>Reports</span>
+      </button>
+      <button class="tab" data-view="studio">
+        <svg class="icon"><use href="#i-edit"/></svg><span>Feature Studio</span>
+      </button>
+      <button class="tab" data-view="stepdefs">
+        <svg class="icon"><use href="#i-code"/></svg><span>Step Definitions</span>
+      </button>
+    </nav>
+
+    <div class="header-meta">
+      <span class="conn"><i class="pulse-dot"></i><span id="connection-status">Live polling</span></span>
+      <span class="updated" id="last-updated">Updated —</span>
+      <span class="auth-user hidden" id="auth-user-email"></span>
+      <button class="btn-icon" id="sign-out-btn" title="Sign out"><svg class="icon"><use href="#i-logout"/></svg></button>
+    </div>
+  </div>
+
+  <div class="runbar">
+    <div class="runbar-group">
+      <label class="field-label" for="feature-select">Feature scope</label>
+      <select id="feature-select" class="select" title="Choose which feature file to run">
+        <option value="">All feature files</option>
+      </select>
+
+      <label class="field-label" for="tag-select">Tag filter</label>
+      <select id="tag-select" class="select" title="Choose a tag to run (leave empty to run all scenarios)">
+        <option value="">No tag filter</option>
+      </select>
+
+      <label class="field-label" for="browser-mode">Browser</label>
+      <div class="seg" id="browser-mode" role="tablist" aria-label="Browser mode">
+        <button class="seg-btn active" data-mode="headless" role="tab" aria-selected="true">Headless</button>
+        <button class="seg-btn" data-mode="windowed" role="tab" aria-selected="false">Windowed</button>
+      </div>
+      <span class="mode-hint hidden" id="mode-hint">Headed mode needs a desktop — this server has no display, so it will run headless.</span>
+    </div>
+
+    <div class="runbar-actions">
+      <span class="status-pill idle" id="status-badge"><span class="dot"></span><span id="status-text">IDLE</span></span>
+      <button class="btn btn-primary" id="run-tag"><svg class="icon"><use href="#i-play"/></svg> Run <span id="run-tag-label">selected</span></button>
+      <button class="btn btn-accent" id="run-feat" data-tag="@feat" title="Quick run with @feat"><svg class="icon"><use href="#i-play"/></svg> Run @feat</button>
+      <button class="btn btn-dark" id="run-batch" data-tag="@batch" title="Quick run with @batch"><svg class="icon"><use href="#i-play"/></svg> Run batch</button>
+      <button class="btn btn-stop hidden" id="stop-run"><svg class="icon"><use href="#i-stop"/></svg> Stop run</button>
+      <button class="btn btn-icon" id="refresh" title="Refresh now"><svg class="icon"><use href="#i-refresh"/></svg></button>
+    </div>
+  </div>
+
+  <div class="global-progress"><span id="global-progress-bar"></span></div>
+</header>
+
+<main class="main">
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <section class="view" id="view-overview">
+    <div class="hero-grid">
+      <div class="card run-card">
+        <div class="run-card-head">
+          <div>
+            <div class="eyebrow warm">Current run</div>
+            <h2 id="run-title">Waiting for scenarios</h2>
+          </div>
+          <span class="run-id" id="run-id">—</span>
+        </div>
+
+        <div class="run-body">
+          <div class="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120">
+              <defs>
+                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#818cf8"/>
+                  <stop offset="100%" stop-color="#4f46e5"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-track" cx="60" cy="60" r="52"/>
+              <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="ring-center">
+              <strong id="progress-value">0%</strong>
+              <small>complete</small>
+            </div>
+          </div>
+
+          <div class="run-copy">
+            <span class="live-tag idle" id="current-status"><i></i><span id="current-status-text">Stand by</span></span>
+            <h3 id="current-scenario">No scenario is running</h3>
+            <p id="current-detail">Start a tagged or feature-specific run and this console will follow every scenario as it moves through its steps.</p>
+          </div>
+        </div>
+
+        <div class="run-meta">
+          <span>Started <strong id="started-at">—</strong></span>
+          <span>Elapsed <strong id="elapsed">—</strong></span>
+          <span>Engine <strong>Chrome</strong></span>
+          <span>Run id <strong id="run-id-meta">—</strong></span>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="card stat pass">
+          <span class="stat-icon"><svg class="icon"><use href="#i-check"/></svg></span>
+          <span class="stat-label">Passed</span>
+          <strong id="passed">0</strong>
+          <span class="stat-sub">clean exits</span>
+        </div>
+        <div class="card stat fail">
+          <span class="stat-icon"><svg class="icon"><use href="#i-x"/></svg></span>
+          <span class="stat-label">Failed</span>
+          <strong id="failed">0</strong>
+          <span class="stat-sub">needs attention</span>
+        </div>
+        <div class="card stat run">
+          <span class="stat-icon"><svg class="icon"><use href="#i-clock"/></svg></span>
+          <span class="stat-label">Running</span>
+          <strong id="running">0</strong>
+          <span class="stat-sub">live now</span>
+        </div>
+        <div class="card stat total">
+          <span class="stat-icon"><svg class="icon"><use href="#i-grid"/></svg></span>
+          <span class="stat-label">Scenarios</span>
+          <strong id="total">0</strong>
+          <span class="stat-sub">observed this run</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lower-grid">
+      <div class="card stream-panel">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Execution log</div>
+            <h2>Scenario stream</h2>
+          </div>
+          <div class="filters" id="stream-filters">
+            <button class="filter active" data-filter="all">All</button>
+            <button class="filter" data-filter="running">Running</button>
+            <button class="filter" data-filter="passed">Passed</button>
+            <button class="filter" data-filter="failed">Failed</button>
+          </div>
+        </div>
+        <div class="stream" id="stream"></div>
+      </div>
+
+      <div class="card health-panel">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Signal</div>
+            <h2>Run health</h2>
+          </div>
+          <span class="health-score" id="health-score">—</span>
+        </div>
+        <p class="health-copy" id="health-copy">No completed scenarios yet.</p>
+        <div class="bar-track"><span id="health-bar"></span></div>
+        <div class="legend">
+          <span><i class="dot pass"></i><b id="health-pass">0</b> passed</span>
+          <span><i class="dot fail"></i><b id="health-fail">0</b> failed</span>
+          <span><i class="dot queued"></i><b id="health-queued">0</b> queued</span>
+        </div>
+        <div class="tip">
+          <span class="tip-mark"><svg class="icon"><use href="#i-info"/></svg></span>
+          <div>
+            <strong>Keep this tab open</strong>
+            <p>The console refreshes automatically while the runner is active.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card queue-panel">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Feature queue</div>
+          <h2>Run status by feature</h2>
+        </div>
+        <span class="queue-message" id="run-message">Ready to run</span>
+      </div>
+      <div class="feature-status-list" id="feature-status-list"></div>
+    </div>
+  </section>
+
+  <!-- ===================== REPORTS ===================== -->
+  <section class="view hidden" id="view-reports">
+    <div class="report-intro">
+      <div>
+        <div class="eyebrow accent">Cucumber report</div>
+        <h2>Quality report</h2>
+        <p class="report-sub">A readable record of every feature, scenario, and step from the latest run.</p>
+      </div>
+      <div class="report-stamp">
+        <span id="report-run-status">LATEST RUN</span>
+        <strong id="report-run-time">—</strong>
+      </div>
+    </div>
+
+    <div class="report-summary">
+      <div class="card summary-card"><span class="stat-label">Total scenarios</span><strong id="report-total">0</strong><span class="stat-sub">across all feature files</span></div>
+      <div class="card summary-card"><span class="stat-label">Pass rate</span><strong class="accent" id="report-pass-rate">—</strong><span class="stat-sub" id="report-pass-copy">No completed scenarios</span></div>
+      <div class="card summary-card"><span class="stat-label">Feature files</span><strong id="report-features">0</strong><span class="stat-sub">observed in this report</span></div>
+      <div class="card summary-card"><span class="stat-label">Total duration</span><strong id="report-duration">—</strong><span class="stat-sub">step execution time</span></div>
+    </div>
+
+    <div class="report-grid">
+      <div class="card distribution-panel">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Outcome distribution</div>
+            <h2>Run results</h2>
+          </div>
+        </div>
+        <div class="distribution">
+          <div class="donut-wrap">
+            <svg class="donut" viewBox="0 0 120 120" id="donut"></svg>
+            <div class="donut-center" id="donut-center"><strong>—</strong><small>pass rate</small></div>
+          </div>
+          <div class="dist-legend" id="dist-legend"></div>
+        </div>
+      </div>
+      <div class="card report-note">
+        <span class="tip-mark"><svg class="icon"><use href="#i-info"/></svg></span>
+        <div>
+          <strong>Readable by design</strong>
+          <p>Expand a feature to inspect each scenario and the exact step that reported a failure.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-search-bar">
+      <span class="report-search-icon"><svg class="icon"><use href="#i-search"/></svg></span>
+      <input type="text" id="report-search" class="report-search-input" placeholder="Find a feature file, scenario, or step&hellip;" spellcheck="false" autocomplete="off">
+      <button class="icon-btn report-search-clear hidden" id="report-search-clear" title="Clear search"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <p class="report-search-summary hidden" id="report-search-summary"></p>
+
+    <div class="feature-report" id="feature-report"></div>
+  </section>
+
+  <!-- ===================== STUDIO ===================== -->
+  <section class="view hidden" id="view-studio">
+    <div class="studio-header">
+      <div>
+        <div class="eyebrow accent">Feature workspace</div>
+        <h2>Feature studio</h2>
+        <p class="report-sub">Add, edit and remove feature files, scenarios and steps without leaving the console.</p>
+      </div>
+      <div class="studio-actions">
+        <button class="btn btn-ghost" id="new-feature"><svg class="icon"><use href="#i-plus"/></svg> New feature</button>
+        <button class="btn btn-primary" id="save-feature"><svg class="icon"><use href="#i-check"/></svg> Save changes</button>
+      </div>
+    </div>
+
+    <div class="studio-layout">
+      <aside class="card studio-files">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Explorer</div>
+            <h2>features</h2>
+          </div>
+          <div class="tree-toolbar">
+            <button class="tree-toolbar-btn" id="tree-new-file" title="New File..."><svg class="icon"><use href="#i-file-plus"/></svg></button>
+            <button class="tree-toolbar-btn" id="tree-new-folder" title="New Folder..."><svg class="icon"><use href="#i-folder-plus"/></svg></button>
+          </div>
+        </div>
+        <div class="file-tree" id="studio-file-list"></div>
+      </aside>
+
+      <div class="studio-form">
+        <div class="card form-panel">
+          <div class="field-row">
+            <label>File path<input id="studio-uri" placeholder="features/example.feature" spellcheck="false"></label>
+            <label>Feature name<input id="studio-name" placeholder="Feature name"></label>
+          </div>
+          <label>Tags<div id="studio-tags-host"></div></label>
+          <label>Description<textarea id="studio-description" rows="3" placeholder="What this feature verifies"></textarea></label>
+        </div>
+
+        <div id="studio-background"></div>
+
+        <div id="studio-scenarios"></div>
+
+        <div class="studio-add-row">
+          <button class="btn btn-ghost add-scenario" id="add-scenario"><svg class="icon"><use href="#i-plus"/></svg> Add scenario</button>
+          <button class="btn btn-accent" id="record-scenario"><svg class="icon"><use href="#i-list"/></svg> Record scenario from browser</button>
+        </div>
+        <p class="studio-message" id="studio-message"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STEP DEFINITIONS ===================== -->
+  <section class="view hidden" id="view-stepdefs">
+    <div class="studio-header">
+      <div>
+        <div class="eyebrow accent">Automation library</div>
+        <h2>Step definitions</h2>
+        <p class="report-sub">Write a new reusable step once, then call it from any feature file.</p>
+      </div>
+      <div class="studio-actions">
+        <button class="btn btn-ghost hidden" id="cancel-stepdef-edit" type="button"><svg class="icon"><use href="#i-x"/></svg> Cancel edit</button>
+        <button class="btn btn-primary" id="create-stepdef"><svg class="icon"><use href="#i-check"/></svg> Create step definition</button>
+      </div>
+    </div>
+
+    <div class="studio-layout">
+      <aside class="card studio-files">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Explorer</div>
+            <h2>step-definitions</h2>
+          </div>
+        </div>
+        <p class="stepdef-explorer-hint">Select a file to see its steps in full.</p>
+        <div class="stepdef-file-list" id="stepdef-file-list"></div>
+      </aside>
+
+      <div class="studio-form">
+        <div class="card stepdef-detail-panel hidden" id="stepdef-detail-panel">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">File contents</div>
+              <h2 id="stepdef-detail-filename">—</h2>
+            </div>
+            <span class="stepdef-detail-hint">Click a step below to edit it</span>
+          </div>
+          <div class="stepdef-detail-list" id="stepdef-detail-list"></div>
+        </div>
+
+        <p class="stepdef-edit-banner hidden" id="stepdef-edit-banner"></p>
+        <div class="card form-panel">
+          <label>Step type
+            <div class="seg" id="stepdef-keyword" role="tablist" aria-label="Step keyword">
+              <button class="seg-btn active" data-keyword="Given" role="tab" aria-selected="true">Given</button>
+              <button class="seg-btn" data-keyword="When" role="tab" aria-selected="false">When</button>
+              <button class="seg-btn" data-keyword="Then" role="tab" aria-selected="false">Then</button>
+            </div>
+          </label>
+
+          <div class="stepdef-file-row">
+            <label>Target file
+              <select id="stepdef-file-select" class="select stepdef-select"></select>
+            </label>
+            <label id="stepdef-new-file-row" class="hidden">New file name
+              <input id="stepdef-new-file" placeholder="my-feature-steps.js" spellcheck="false" autocomplete="off">
+            </label>
+          </div>
+
+          <label>Step text
+            <div class="stepdef-template-row">
+              <input id="stepdef-template" placeholder='I click the "..." button' spellcheck="false" autocomplete="off">
+              <button class="btn btn-ghost" id="stepdef-insert-placeholder" type="button" title='Insert a "..." placeholder at the cursor'><svg class="icon"><use href="#i-plus"/></svg> Placeholder</button>
+            </div>
+            <p class="stepdef-hint">Wrap any value that changes each run in <code>"..."</code> — e.g. <code>I enter "..." into the "..." field</code>.</p>
+          </label>
+
+          <div class="stepdef-preview" id="stepdef-preview-wrap">
+            <span class="stepdef-preview-label">Compiles to</span>
+            <code class="stepdef-preview-pattern" id="stepdef-pattern-preview">—</code>
+          </div>
+
+          <label>Implementation
+            <div class="stepdef-code-editor">
+              <pre class="stepdef-code-editor-highlight" id="stepdef-body-highlight" aria-hidden="true"><code></code></pre>
+              <textarea id="stepdef-body" class="stepdef-code-editor-input" rows="6" spellcheck="false" placeholder="await page.click('button');&#10;&#10;Leave blank to add a // TODO stub you can fill in later."></textarea>
+              <div class="stepdef-autocomplete hidden" id="stepdef-autocomplete"></div>
+            </div>
+          </label>
+        </div>
+        <p class="studio-message" id="stepdef-message"></p>
+      </div>
+    </div>
+  </section>
+
+  <datalist id="step-suggestions"></datalist>
+
+  <div class="record-overlay hidden" id="record-overlay">
+    <div class="record-dialog">
+      <div class="record-dialog-head">
+        <h3 id="record-title">Record a scenario</h3>
+        <button class="icon-btn" id="record-close" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>
+
+      <div id="record-step-url">
+        <p class="record-hint">Enter the page you want to test. A real browser window will open — browse it and click, then every click and field you fill in becomes a step automatically.</p>
+        <label>Website URL<input id="record-url" placeholder="https://example.com" spellcheck="false"></label>
+        <p class="record-error" id="record-error"></p>
+        <div class="record-actions">
+          <button class="btn btn-ghost" id="record-cancel-url">Cancel</button>
+          <button class="btn btn-primary" id="record-start">Open browser &amp; start recording</button>
+        </div>
+      </div>
+
+      <div id="record-step-live" class="hidden">
+        <div class="record-live-status">
+          <span class="record-dot"></span>
+          <span id="record-status-text">Recording — interact with the browser window that opened.</span>
+        </div>
+        <div class="record-steps-list" id="record-steps-list"></div>
+        <div class="record-actions">
+          <button class="btn btn-ghost danger" id="record-discard">Discard</button>
+          <button class="btn btn-primary" id="record-finish">Finish &amp; create scenario</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lightbox-overlay hidden" id="lightbox-overlay">
+    <div class="lightbox-dialog">
+      <button class="icon-btn lightbox-close" id="lightbox-close" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+      <img class="lightbox-image" id="lightbox-image" alt="Step screenshot">
+    </div>
+  </div>
+
+  <div class="confirm-overlay hidden" id="confirm-overlay">
+    <div class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+      <div class="confirm-icon" id="confirm-icon"><svg class="icon"><use href="#i-trash"/></svg></div>
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p id="confirm-message">This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+        <button class="btn btn-stop" id="confirm-ok">Delete</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast-host" id="toast-host" aria-live="polite"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="firebase-client.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
