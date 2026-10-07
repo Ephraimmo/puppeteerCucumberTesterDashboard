@@ -336,6 +336,34 @@ h1, h2, h3, p { margin: 0; }
 .live-placeholder { color: #8a93a6; font-size: 12.5px; padding: 0 20px; text-align: center; }
 .live-url { margin-top: 10px; font: 500 10.5px var(--mono); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* large live view — opens by itself for Windowed runs */
+.live-overlay {
+  position: fixed; inset: 0; background: rgba(8, 12, 22, .78);
+  display: flex; align-items: center; justify-content: center; z-index: 1150; padding: 24px;
+}
+.live-dialog {
+  width: min(1280px, 100%); max-height: 100%; display: flex; flex-direction: column; gap: 12px;
+  padding: 16px 18px 14px; border-radius: var(--radius); box-shadow: var(--shadow-lg); color: #eef2fb;
+  background: linear-gradient(160deg, #131b2e, #0c1220);
+}
+.live-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.live-dialog-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.live-dialog-title > div { min-width: 0; }
+.live-dialog-title h3 { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-dialog-title p { font: 500 11px var(--mono); color: #9aa6c2; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-dialog-actions { display: flex; gap: 8px; flex: none; }
+.live-dialog-screen {
+  position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100vh - 160px); min-height: 200px;
+  display: grid; place-items: center; overflow: hidden; border-radius: var(--radius-sm); background: #05080f;
+}
+.live-dialog-screen:fullscreen { max-height: none; border-radius: 0; }
+.live-dialog-screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.live-dialog .live-url { margin-top: 0; color: #8a93a6; }
+@media (max-width: 560px) {
+  .live-overlay { padding: 10px; }
+  .live-dialog { padding: 12px; }
+}
+
 .queue-panel { margin-top: 16px; }
 .queue-message { font: 500 10.5px var(--mono); color: var(--ink-3); letter-spacing: .3px; }
 .feature-status-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 26px; margin-top: 14px; }

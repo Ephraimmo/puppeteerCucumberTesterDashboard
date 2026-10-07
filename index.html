@@ -205,7 +205,7 @@
         </div>
         <div class="live-panel-actions">
           <span class="status-pill idle" id="live-status"><span class="dot"></span><span id="live-status-text">NO RUN</span></span>
-          <button class="btn btn-icon" id="live-fullscreen" title="Full screen"><svg class="icon"><use href="#i-expand"/></svg></button>
+          <button class="btn btn-icon" id="live-expand" title="Open the large live view"><svg class="icon"><use href="#i-expand"/></svg></button>
         </div>
       </div>
       <div class="live-viewport empty" id="live-viewport">
@@ -490,6 +490,29 @@
           <button class="btn btn-primary" id="record-finish">Finish &amp; create scenario</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="live-overlay hidden" id="live-overlay" role="dialog" aria-modal="true" aria-labelledby="live-overlay-title">
+    <div class="live-dialog">
+      <div class="live-dialog-head">
+        <div class="live-dialog-title">
+          <span class="status-pill idle" id="live-overlay-status"><span class="dot"></span><span id="live-overlay-status-text">WAITING</span></span>
+          <div>
+            <h3 id="live-overlay-title">Starting the test browser…</h3>
+            <p id="live-overlay-step"></p>
+          </div>
+        </div>
+        <div class="live-dialog-actions">
+          <button class="btn btn-icon" id="live-overlay-fullscreen" title="Full screen"><svg class="icon"><use href="#i-expand"/></svg></button>
+          <button class="btn btn-icon" id="live-overlay-close" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        </div>
+      </div>
+      <div class="live-dialog-screen" id="live-overlay-screen">
+        <img id="live-overlay-frame" class="hidden" alt="Live view of the test browser">
+        <p class="live-placeholder" id="live-overlay-placeholder">Waiting for the test browser to open…</p>
+      </div>
+      <div class="live-url" id="live-overlay-url"></div>
     </div>
   </div>
 

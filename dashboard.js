@@ -1958,6 +1958,7 @@ function load() {
             state.runStatus = data[3];
             state.env = data[4] || state.env;
             render();
+            syncLiveOverlay();
         })
         .catch(function () { render(); });
 }
@@ -2695,25 +2696,70 @@ $('record-steps-list').addEventListener('click', function (event) {
 });
 
 /* ---------------- live browser view ---------------- */
-var liveAllowed = false;   // set once signed in — watching needs auth
+var liveAllowed = false;      // set once signed in — watching needs auth
 var stopLiveWatch = null;
+var liveFrame = null;         // last frame received, or null
+var liveOverlayRunKey = null; // startedAt of the Windowed run the large view last opened for
 
-function renderLiveFrame(frame) {
-    var hasFrame = !!(frame && frame.data);
-    var img = $('live-frame');
-    if (hasFrame) img.src = 'data:image/jpeg;base64,' + frame.data;
-    img.classList.toggle('hidden', !hasFrame);
-    $('live-placeholder').classList.toggle('hidden', hasFrame);
-    $('live-viewport').classList.toggle('empty', !hasFrame);
-    $('live-status').className = 'status-pill ' + (hasFrame ? 'running' : 'idle');
-    $('live-status-text').textContent = hasFrame ? 'LIVE' : 'NO RUN';
-    $('live-url').textContent = hasFrame ? (frame.url || '') : '';
+function liveOverlayOpen() { return !$('live-overlay').classList.contains('hidden'); }
+
+// paints one frame into the Run Overview panel ('live') or the large view ('live-overlay')
+function paintLiveScreen(prefix, frame) {
+    var img = $(prefix + '-frame');
+    if (frame) img.src = 'data:image/jpeg;base64,' + frame.data;
+    img.classList.toggle('hidden', !frame);
+    $(prefix + '-placeholder').classList.toggle('hidden', !!frame);
+    $(prefix + '-url').textContent = frame ? (frame.url || '') : '';
 }
 
-// Only watch while the overview is actually on screen: frames are heavy, and the agent
+function renderLiveFrame(frame) {
+    liveFrame = frame && frame.data ? frame : null;
+    paintLiveScreen('live', liveFrame);
+    paintLiveScreen('live-overlay', liveFrame);
+    $('live-viewport').classList.toggle('empty', !liveFrame);
+    $('live-status').className = 'status-pill ' + (liveFrame ? 'running' : 'idle');
+    $('live-status-text').textContent = liveFrame ? 'LIVE' : 'NO RUN';
+    renderLiveOverlayInfo();
+}
+
+function renderLiveOverlayInfo() {
+    var progress = state.progress || {};
+    var busy = isBusy();
+    $('live-overlay-status').className = 'status-pill ' + (liveFrame ? 'running' : 'idle');
+    $('live-overlay-status-text').textContent = liveFrame ? 'LIVE' : busy ? 'WAITING' : 'ENDED';
+    $('live-overlay-title').textContent = (busy && progress.current) || (busy ? 'Starting the test browser…' : 'No scenario is running');
+    $('live-overlay-step').textContent = busy ? (progress.currentStep || '') : 'The run has finished — results are on Run Overview.';
+    $('live-overlay-placeholder').textContent = busy ? 'Waiting for the test browser to open…' : 'The run has finished.';
+}
+
+function openLiveOverlay() {
+    $('live-overlay').classList.remove('hidden');
+    renderLiveOverlayInfo();
+    syncLiveWatch();
+}
+
+function closeLiveOverlay() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    $('live-overlay').classList.add('hidden');
+    syncLiveWatch();
+}
+
+// Called after every data load: opens the large view once per Windowed run, wherever that
+// run was started from. Closing it keeps it closed until the next Windowed run.
+function syncLiveOverlay() {
+    var run = state.runStatus && state.runStatus.run;
+    if (run && run.status === 'running' && run.headless === false && run.startedAt !== liveOverlayRunKey) {
+        liveOverlayRunKey = run.startedAt;
+        openLiveOverlay();
+    }
+    renderLiveOverlayInfo();
+}
+
+// Only watch while a live view is actually on screen: frames are heavy, and the agent
 // stops uploading them altogether when no dashboard is watching.
 function syncLiveWatch() {
-    var wanted = liveAllowed && !document.hidden && !$('view-overview').classList.contains('hidden');
+    var onScreen = liveOverlayOpen() || !$('view-overview').classList.contains('hidden');
+    var wanted = liveAllowed && !document.hidden && onScreen;
     if (wanted && !stopLiveWatch) {
         stopLiveWatch = FB.watchLive(renderLiveFrame);
     }
@@ -2726,9 +2772,17 @@ function syncLiveWatch() {
 
 document.addEventListener('visibilitychange', syncLiveWatch);
 
-$('live-fullscreen').addEventListener('click', function () {
+$('live-expand').addEventListener('click', openLiveOverlay);
+$('live-overlay-close').addEventListener('click', closeLiveOverlay);
+$('live-overlay').addEventListener('click', function (event) {
+    if (event.target === this) closeLiveOverlay();
+});
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && liveOverlayOpen() && !document.fullscreenElement) closeLiveOverlay();
+});
+$('live-overlay-fullscreen').addEventListener('click', function () {
     if (document.fullscreenElement) document.exitFullscreen();
-    else if ($('live-viewport').requestFullscreen) $('live-viewport').requestFullscreen();
+    else if ($('live-overlay-screen').requestFullscreen) $('live-overlay-screen').requestFullscreen();
 });
 
 /* ---------------- boot ---------------- */
