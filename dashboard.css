@@ -332,9 +332,15 @@ h1, h2, h3, p { margin: 0; }
 }
 .live-viewport.empty { aspect-ratio: auto; height: 110px; }
 .live-viewport:fullscreen { max-height: none; border-radius: 0; }
-.live-viewport img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.live-viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
 .live-placeholder { color: #8a93a6; font-size: 12.5px; padding: 0 20px; text-align: center; }
-.live-url { margin-top: 10px; font: 500 10.5px var(--mono); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; min-width: 0; }
+.live-url { flex: 1 1 auto; min-width: 0; font: 500 10.5px var(--mono); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* how the picture reaches this page: a direct connection to the test machine, or the Firebase relay */
+.live-link { flex: none; font: 600 10px var(--mono); letter-spacing: .3px; padding: 3px 8px; border-radius: 999px; background: #eef1f6; color: var(--ink-3); white-space: nowrap; }
+.live-link:empty { display: none; }
+.live-link.direct { background: var(--pass-soft); color: var(--pass-strong); }
+.live-link.relay { background: var(--run-soft); color: #b45309; }
 
 /* large live view — opens by itself for Windowed runs */
 .live-overlay {
@@ -357,11 +363,35 @@ h1, h2, h3, p { margin: 0; }
   display: grid; place-items: center; overflow: hidden; border-radius: var(--radius-sm); background: #05080f;
 }
 .live-dialog-screen:fullscreen { max-height: none; border-radius: 0; }
-.live-dialog-screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
-.live-dialog .live-url { margin-top: 0; color: #8a93a6; }
+.live-dialog-screen canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.live-dialog .live-foot { margin-top: 0; }
+.live-dialog .live-url { color: #8a93a6; }
+.live-dialog .live-link { background: rgba(255, 255, 255, .08); color: #9aa6c2; }
+.live-dialog .live-link.direct { background: rgba(52, 211, 153, .14); color: #6ee7b7; }
+.live-dialog .live-link.relay { background: rgba(251, 191, 36, .14); color: #fcd34d; }
+.live-overlay:not(.minimized) #live-overlay-restore { display: none; }
+
+/* minimized: the same live view as a small window in the corner that leaves the page usable
+   underneath, and can be dragged by its title bar (see dashboard.js) */
+.live-overlay.minimized {
+  inset: auto auto 20px 20px; width: min(340px, calc(100vw - 24px)); padding: 0;
+  display: block; background: none; pointer-events: none;
+}
+.live-overlay.minimized .live-dialog { pointer-events: auto; padding: 10px 12px; gap: 8px; }
+.live-overlay.minimized .live-dialog-head { gap: 8px; cursor: grab; touch-action: none; user-select: none; }
+.live-overlay.minimized .live-dialog-head.dragging { cursor: grabbing; }
+.live-overlay.minimized .live-dialog-title { gap: 8px; }
+.live-overlay.minimized .live-dialog-title h3 { font-size: 12.5px; }
+.live-overlay.minimized .live-dialog-title p { font-size: 10px; margin-top: 2px; }
+.live-overlay.minimized .live-dialog-actions { gap: 6px; }
+.live-overlay.minimized .live-dialog-actions .btn-icon { padding: 6px; }
+.live-overlay.minimized .live-dialog-screen { max-height: none; min-height: 0; cursor: pointer; }
+.live-overlay.minimized #live-overlay-fullscreen,
+.live-overlay.minimized #live-overlay-minimize { display: none; }
 @media (max-width: 560px) {
   .live-overlay { padding: 10px; }
   .live-dialog { padding: 12px; }
+  .live-overlay.minimized { padding: 0; left: 12px; bottom: 12px; }
 }
 
 .queue-panel { margin-top: 16px; }

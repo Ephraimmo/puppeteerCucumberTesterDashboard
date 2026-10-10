@@ -22,6 +22,8 @@
     <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3.5V8h-4.5"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-window" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></symbol>
@@ -209,10 +211,13 @@
         </div>
       </div>
       <div class="live-viewport empty" id="live-viewport">
-        <img id="live-frame" class="hidden" alt="Live view of the test browser">
+        <canvas id="live-frame" class="hidden" role="img" aria-label="Live view of the test browser"></canvas>
         <p class="live-placeholder" id="live-placeholder">The test browser appears here while a run is in progress.</p>
       </div>
-      <div class="live-url" id="live-url"></div>
+      <div class="live-foot">
+        <div class="live-url" id="live-url"></div>
+        <span class="live-link" id="live-link"></span>
+      </div>
     </div>
 
     <div class="lower-grid">
@@ -495,7 +500,7 @@
 
   <div class="live-overlay hidden" id="live-overlay" role="dialog" aria-modal="true" aria-labelledby="live-overlay-title">
     <div class="live-dialog">
-      <div class="live-dialog-head">
+      <div class="live-dialog-head" id="live-dialog-head">
         <div class="live-dialog-title">
           <span class="status-pill idle" id="live-overlay-status"><span class="dot"></span><span id="live-overlay-status-text">WAITING</span></span>
           <div>
@@ -504,15 +509,20 @@
           </div>
         </div>
         <div class="live-dialog-actions">
-          <button class="btn btn-icon" id="live-overlay-fullscreen" title="Full screen"><svg class="icon"><use href="#i-expand"/></svg></button>
-          <button class="btn btn-icon" id="live-overlay-close" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+          <button class="btn btn-icon" id="live-overlay-fullscreen" title="Full screen" aria-label="Full screen"><svg class="icon"><use href="#i-expand"/></svg></button>
+          <button class="btn btn-icon" id="live-overlay-minimize" title="Minimize — keep watching in a small window" aria-label="Minimize"><svg class="icon"><use href="#i-minus"/></svg></button>
+          <button class="btn btn-icon" id="live-overlay-restore" title="Back to the large view" aria-label="Restore the large view"><svg class="icon"><use href="#i-window"/></svg></button>
+          <button class="btn btn-icon" id="live-overlay-close" title="Close" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
         </div>
       </div>
       <div class="live-dialog-screen" id="live-overlay-screen">
-        <img id="live-overlay-frame" class="hidden" alt="Live view of the test browser">
+        <canvas id="live-overlay-frame" class="hidden" role="img" aria-label="Live view of the test browser"></canvas>
         <p class="live-placeholder" id="live-overlay-placeholder">Waiting for the test browser to open…</p>
       </div>
-      <div class="live-url" id="live-overlay-url"></div>
+      <div class="live-foot">
+        <div class="live-url" id="live-overlay-url"></div>
+        <span class="live-link" id="live-overlay-link"></span>
+      </div>
     </div>
   </div>
 

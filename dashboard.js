@@ -2696,44 +2696,98 @@ $('record-steps-list').addEventListener('click', function (event) {
 });
 
 /* ---------------- live browser view ---------------- */
-var liveAllowed = false;      // set once signed in — watching needs auth
+// The test browser as it is right now, streamed from the machine running the tests (see
+// firebase-client.js for how the frames get here). One stream feeds two screens: the panel on
+// Run Overview, and a large view that opens by itself for Windowed runs. The large view can be
+// minimized to a small window in the corner, which leaves the page usable and can be dragged.
+var LIVE_SCREENS = ['live', 'live-overlay'];
+var LIVE_MINI_KEY = 'live-mini-position';
+
+var liveAllowed = false;          // set once signed in — watching needs auth
 var stopLiveWatch = null;
-var liveFrame = null;         // last frame received, or null
-var liveOverlayRunKey = null; // startedAt of the Windowed run the large view last opened for
+var liveFrame = null;             // the frame on screen: { bitmap, url, via, ... }, or null
+var liveStepInfo = null;          // { scenario, step } as the test runs, ahead of the slower progress feed
+var liveOverlayRunKey = null;     // startedAt of the Windowed run the large view last opened for
+var liveOverlayMode = 'expanded'; // 'expanded' (large, modal) or 'minimized' (small window in the corner)
+var liveContexts = {};
 
 function liveOverlayOpen() { return !$('live-overlay').classList.contains('hidden'); }
 
-// paints one frame into the Run Overview panel ('live') or the large view ('live-overlay')
-function paintLiveScreen(prefix, frame) {
-    var img = $(prefix + '-frame');
-    if (frame) img.src = 'data:image/jpeg;base64,' + frame.data;
-    img.classList.toggle('hidden', !frame);
-    $(prefix + '-placeholder').classList.toggle('hidden', !!frame);
-    $(prefix + '-url').textContent = frame ? (frame.url || '') : '';
+// Draws the current frame on every live screen that is actually showing. A screen that is
+// hidden now is painted when it appears (see syncLiveWatch).
+function paintLiveScreens() {
+    LIVE_SCREENS.forEach(function (prefix) {
+        var canvas = $(prefix + '-frame');
+        canvas.classList.toggle('hidden', !liveFrame);
+        $(prefix + '-placeholder').classList.toggle('hidden', !!liveFrame);
+        var url = liveFrame ? (liveFrame.url || '') : '';
+        if ($(prefix + '-url').textContent !== url) $(prefix + '-url').textContent = url;
+        if (!liveFrame || !canvas.getClientRects().length) return;
+        var bitmap = liveFrame.bitmap;
+        if (canvas.width !== bitmap.width || canvas.height !== bitmap.height) {
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+        }
+        var context = liveContexts[prefix] || (liveContexts[prefix] = canvas.getContext('2d', { alpha: false }));
+        context.drawImage(bitmap, 0, 0);
+    });
 }
 
+// Gets each frame (or null once the run has ended) from firebase-client.js.
 function renderLiveFrame(frame) {
-    liveFrame = frame && frame.data ? frame : null;
-    paintLiveScreen('live', liveFrame);
-    paintLiveScreen('live-overlay', liveFrame);
-    $('live-viewport').classList.toggle('empty', !liveFrame);
-    $('live-status').className = 'status-pill ' + (liveFrame ? 'running' : 'idle');
-    $('live-status-text').textContent = liveFrame ? 'LIVE' : 'NO RUN';
+    var previous = liveFrame;
+    liveFrame = frame && frame.bitmap ? frame : null;
+    paintLiveScreens();
+    if (previous && previous.bitmap) previous.bitmap.close();
+    if (!previous !== !liveFrame) { // the stream started or stopped
+        $('live-viewport').classList.toggle('empty', !liveFrame);
+        $('live-status').className = 'status-pill ' + (liveFrame ? 'running' : 'idle');
+        $('live-status-text').textContent = liveFrame ? 'LIVE' : 'NO RUN';
+        renderLiveOverlayInfo();
+    }
+}
+
+// The scenario and step arrive together with the picture, instead of trailing it by the time
+// the progress feed takes to come round.
+function renderLiveStep(info) {
+    liveStepInfo = info && (info.scenario || info.step) ? info : null;
     renderLiveOverlayInfo();
+}
+
+function renderLiveLink(link) {
+    var text = '';
+    var hint = '';
+    if (link.via === 'direct') {
+        text = 'DIRECT' + (link.fps ? ' · ' + link.fps + ' fps' : '') + (link.rtt ? ' · ' + link.rtt + ' ms' : '');
+        hint = 'Connected straight to the machine running the tests — the picture is as live as the network allows.';
+    }
+    else if (link.via === 'relay') {
+        text = 'RELAY' + (link.fps ? ' · ' + link.fps + ' fps' : '');
+        hint = 'Relayed through Firebase, which adds a short delay. A direct connection is tried automatically.';
+    }
+    ['live-link', 'live-overlay-link'].forEach(function (id) {
+        var el = $(id);
+        el.className = 'live-link' + (text ? ' ' + link.via : '');
+        if (el.textContent !== text) el.textContent = text;
+        el.title = hint;
+    });
 }
 
 function renderLiveOverlayInfo() {
     var progress = state.progress || {};
     var busy = isBusy();
+    var scenario = (liveStepInfo && liveStepInfo.scenario) || (busy && progress.current);
+    var step = liveStepInfo ? liveStepInfo.step : progress.currentStep;
     $('live-overlay-status').className = 'status-pill ' + (liveFrame ? 'running' : 'idle');
     $('live-overlay-status-text').textContent = liveFrame ? 'LIVE' : busy ? 'WAITING' : 'ENDED';
-    $('live-overlay-title').textContent = (busy && progress.current) || (busy ? 'Starting the test browser…' : 'No scenario is running');
-    $('live-overlay-step').textContent = busy ? (progress.currentStep || '') : 'The run has finished — results are on Run Overview.';
+    $('live-overlay-title').textContent = scenario || (busy ? 'Starting the test browser…' : 'No scenario is running');
+    $('live-overlay-step').textContent = busy ? (step || '') : 'The run has finished — results are on Run Overview.';
     $('live-overlay-placeholder').textContent = busy ? 'Waiting for the test browser to open…' : 'The run has finished.';
 }
 
 function openLiveOverlay() {
     $('live-overlay').classList.remove('hidden');
+    setLiveOverlayMode('expanded');
     renderLiveOverlayInfo();
     syncLiveWatch();
 }
@@ -2743,6 +2797,72 @@ function closeLiveOverlay() {
     $('live-overlay').classList.add('hidden');
     syncLiveWatch();
 }
+
+function setLiveOverlayMode(mode) {
+    var overlay = $('live-overlay');
+    var minimized = mode === 'minimized';
+    liveOverlayMode = mode;
+    if (minimized && document.fullscreenElement) document.exitFullscreen();
+    overlay.classList.toggle('minimized', minimized);
+    overlay.setAttribute('aria-modal', minimized ? 'false' : 'true');
+    if (minimized) {
+        var saved = readLiveMiniPosition();
+        if (saved) moveLiveMini(saved.left, saved.top);
+    }
+    else {
+        ['left', 'top', 'right', 'bottom'].forEach(function (side) { overlay.style[side] = ''; });
+    }
+    paintLiveScreens();
+}
+
+// The minimized window starts in the bottom-left corner and remembers where it was dragged to.
+function readLiveMiniPosition() {
+    try {
+        var saved = JSON.parse(localStorage.getItem(LIVE_MINI_KEY));
+        return saved && isFinite(saved.left) && isFinite(saved.top) ? saved : null;
+    }
+    catch (error) { return null; }
+}
+
+function moveLiveMini(left, top) {
+    var overlay = $('live-overlay');
+    left = Math.min(Math.max(8, left), Math.max(8, window.innerWidth - overlay.offsetWidth - 8));
+    top = Math.min(Math.max(8, top), Math.max(8, window.innerHeight - overlay.offsetHeight - 8));
+    overlay.style.left = left + 'px';
+    overlay.style.top = top + 'px';
+    overlay.style.right = 'auto';
+    overlay.style.bottom = 'auto';
+}
+
+(function enableLiveMiniDrag() {
+    var head = $('live-dialog-head');
+    var drag = null;
+    head.addEventListener('pointerdown', function (event) {
+        if (liveOverlayMode !== 'minimized' || event.button !== 0 || event.target.closest('button')) return;
+        var rect = $('live-overlay').getBoundingClientRect();
+        drag = { dx: event.clientX - rect.left, dy: event.clientY - rect.top };
+        try { head.setPointerCapture(event.pointerId); } catch (error) { /* dragging still works while the pointer stays on the bar */ }
+        head.classList.add('dragging');
+    });
+    head.addEventListener('pointermove', function (event) {
+        if (drag) moveLiveMini(event.clientX - drag.dx, event.clientY - drag.dy);
+    });
+    function drop() {
+        if (!drag) return;
+        drag = null;
+        head.classList.remove('dragging');
+        var overlay = $('live-overlay');
+        try { localStorage.setItem(LIVE_MINI_KEY, JSON.stringify({ left: parseFloat(overlay.style.left), top: parseFloat(overlay.style.top) })); }
+        catch (error) { /* position just isn't remembered */ }
+    }
+    head.addEventListener('pointerup', drop);
+    head.addEventListener('pointercancel', drop);
+})();
+
+window.addEventListener('resize', function () {
+    var overlay = $('live-overlay');
+    if (liveOverlayMode === 'minimized' && overlay.style.top) moveLiveMini(parseFloat(overlay.style.left), parseFloat(overlay.style.top));
+});
 
 // Called after every data load: opens the large view once per Windowed run, wherever that
 // run was started from. Closing it keeps it closed until the next Windowed run.
@@ -2756,29 +2876,49 @@ function syncLiveOverlay() {
 }
 
 // Only watch while a live view is actually on screen: frames are heavy, and the agent
-// stops uploading them altogether when no dashboard is watching.
+// stops producing them altogether when no dashboard is watching.
 function syncLiveWatch() {
     var onScreen = liveOverlayOpen() || !$('view-overview').classList.contains('hidden');
     var wanted = liveAllowed && !document.hidden && onScreen;
     if (wanted && !stopLiveWatch) {
-        stopLiveWatch = FB.watchLive(renderLiveFrame);
+        stopLiveWatch = FB.watchLive({ onFrame: renderLiveFrame, onStep: renderLiveStep, onLink: renderLiveLink });
     }
     else if (!wanted && stopLiveWatch) {
         stopLiveWatch();
         stopLiveWatch = null;
         renderLiveFrame(null);
+        renderLiveStep(null);
+        renderLiveLink({ via: 'none' });
     }
+    paintLiveScreens(); // a screen that has just appeared shows the latest frame at once
 }
 
 document.addEventListener('visibilitychange', syncLiveWatch);
 
 $('live-expand').addEventListener('click', openLiveOverlay);
 $('live-overlay-close').addEventListener('click', closeLiveOverlay);
+// Minimizing and restoring swap which buttons are showing, so keyboard focus follows the
+// one that replaces the button that was just used (only when the user asked for the change:
+// the large view also opens by itself, and must not grab focus from what is being typed).
+function minimizeLiveOverlay() {
+    setLiveOverlayMode('minimized');
+    $('live-overlay-restore').focus();
+}
+function restoreLiveOverlay() {
+    setLiveOverlayMode('expanded');
+    $('live-overlay-minimize').focus();
+}
+$('live-overlay-minimize').addEventListener('click', minimizeLiveOverlay);
+$('live-overlay-restore').addEventListener('click', restoreLiveOverlay);
+$('live-overlay-screen').addEventListener('click', function () {
+    if (liveOverlayMode === 'minimized') restoreLiveOverlay();
+});
+// a click beside the large view, or Esc, tucks it away into the small window rather than ending the live view
 $('live-overlay').addEventListener('click', function (event) {
-    if (event.target === this) closeLiveOverlay();
+    if (event.target === this && liveOverlayMode === 'expanded') minimizeLiveOverlay();
 });
 document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && liveOverlayOpen() && !document.fullscreenElement) closeLiveOverlay();
+    if (event.key === 'Escape' && liveOverlayOpen() && liveOverlayMode === 'expanded' && !document.fullscreenElement) minimizeLiveOverlay();
 });
 $('live-overlay-fullscreen').addEventListener('click', function () {
     if (document.fullscreenElement) document.exitFullscreen();

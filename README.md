@@ -52,10 +52,26 @@ If more than one machine runs an agent (`FIREBASE_AGENT_ID` set on that machine)
 the dashboard once with `?agent=<that id>`. The choice is remembered in that browser.
 
 The **Live browser** panel on Run Overview shows what the test browser is showing during a
-run, a few frames a second. Frames are only uploaded while a dashboard has that tab open,
-since each one (roughly 20–80 KB) counts toward Firebase download usage. In Windowed mode,
-don't minimize the Chrome window on the test machine — Chrome stops painting minimized
-windows, so the panel would freeze. Headless runs always stream.
+run. A Windowed run also opens it as a large view by itself. Use **–** (or Esc, or a click
+beside it) to minimize the large view into a small window in the corner — it keeps playing,
+leaves the page underneath usable, and can be dragged anywhere; its **□** button (or a click
+on the picture) brings the large view back, and **✕** closes it.
+
+The chip under the picture says how it is reaching you:
+
+- **DIRECT** — a WebRTC connection straight to the machine running the tests (Firebase is only
+  used to set it up). This is the fast one: typically a few frames of delay, 15–20 frames a
+  second, and no Firebase traffic. It is made automatically a second or two after the
+  dashboard starts watching, and again if it drops.
+- **RELAY** — the picture goes through Firebase instead, which adds a visible delay (roughly
+  half a second from a distant region) and runs at about 8 frames a second. This is what you
+  see until a direct connection is up, or when one can't be made (a firewall that blocks UDP,
+  or an agent without the optional `node-datachannel` package). Each relayed frame
+  (roughly 20–80 KB) counts toward Firebase download usage, so frames are only produced while a
+  dashboard is actually watching.
+
+In Windowed mode, don't minimize the Chrome window on the test machine — Chrome stops
+painting minimized windows, so the picture would freeze. Headless runs always stream.
 
 Screenshots from test runs are not synced through Firebase, so they don't appear here.
 Pass/fail status, error messages, and durations do.
